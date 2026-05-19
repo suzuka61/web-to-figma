@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "网页转 Figma",
+  "description": "一键抓取任意网页或元素，直接粘贴到 Figma 中。",
+  "version": "1.0.0",
+  "permissions": ["activeTab", "scripting", "storage", "declarativeNetRequest"],
+  "host_permissions": ["<all_urls>"],
+  "declarative_net_request": {
+    "rule_resources": [{
+      "id": "cors_and_csp_rules",
+      "enabled": true,
+      "path": "rules.json"
+    }]
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_title": "网页转 Figma",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["capture.js", "content.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "commands": {
+    "capture": {
+      "suggested_key": { "default": "Alt+Shift+F" },
+      "description": "激活网页转 Figma"
+    }
+  }
+}
