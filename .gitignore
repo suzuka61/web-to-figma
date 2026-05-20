@@ -3,4 +3,5 @@
 !web-to-figma/**
 !html/
 !html/**
+!vercel.json
 .DS_Store
