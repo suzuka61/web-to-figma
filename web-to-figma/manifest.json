@@ -8,7 +8,7 @@
   "declarative_net_request": {
     "rule_resources": [{
       "id": "cors_and_csp_rules",
-      "enabled": true,
+      "enabled": false,
       "path": "rules.json"
     }]
   },

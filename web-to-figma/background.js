@@ -24,8 +24,23 @@ async function proxyFetchAsset(url) {
   } catch { return null; }
 }
 
+const RULESET_ID = 'cors_and_csp_rules';
+
+async function enableRules() {
+  await chrome.declarativeNetRequest.updateEnabledRulesets({
+    enableRulesetIds: [RULESET_ID]
+  });
+}
+
+async function disableRules() {
+  await chrome.declarativeNetRequest.updateEnabledRulesets({
+    disableRulesetIds: [RULESET_ID]
+  });
+}
+
 async function activate(tab) {
   try {
+    await enableRules();
     // 1. Patch closed shadow roots
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
@@ -138,6 +153,8 @@ async function activate(tab) {
 
   } catch (e) {
     console.warn('[web-to-figma] inject failed:', e.message);
+  } finally {
+    setTimeout(disableRules, 30000);
   }
 }
 
