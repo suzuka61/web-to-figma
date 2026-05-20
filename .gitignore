@@ -1,0 +1,6 @@
+*
+!web-to-figma/
+!web-to-figma/**
+!html/
+!html/**
+.DS_Store

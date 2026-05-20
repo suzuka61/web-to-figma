@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>网页转 Figma — 一键抓取网页，粘贴即得可编辑图层</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  :root {
+    --bg: #FFFBE6;
+    --pink: #FF6B9D;
+    --yellow: #FFD93D;
+    --blue: #4D96FF;
+    --green: #6BCB77;
+    --orange: #FF8C42;
+    --purple: #C084FC;
+    --black: #1A1A2E;
+    --white: #FFFBE6;
+    --border: 3px solid var(--black);
+    --shadow: 5px 5px 0 var(--black);
+    --shadow-sm: 3px 3px 0 var(--black);
+    --shadow-lg: 8px 8px 0 var(--black);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--black);
+    -webkit-font-smoothing: antialiased;
+    background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%231A1A2E' fill-opacity='0.03'%3E%3Cpath d='M0 0h1v1H0zM4 4h1v1H4zM8 0h1v1H8zM12 4h1v1h-1zM16 0h1v1h-1zM20 4h1v1h-1zM24 0h1v1h-1zM28 4h1v1h-1zM32 0h1v1h-1zM36 4h1v1h-1zM0 8h1v1H0zM4 12h1v1H4zM8 8h1v1H8zM12 12h1v1h-1zM16 8h1v1h-1zM20 12h1v1h-1zM24 8h1v1h-1zM28 12h1v1h-1zM32 8h1v1h-1zM36 12h1v1h-1z'/%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  .container { width: 1200px; margin: 0 auto; }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--yellow);
+    border-bottom: var(--border);
+    box-shadow: 0 4px 0 var(--black);
+  }
+  nav .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 72px;
+    padding: 0 32px;
+  }
+  .nav-brand {
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .nav-brand-icon {
+    width: 32px; height: 32px;
+    background: var(--blue);
+    border: var(--border);
+    border-radius: 6px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 900;
+    color: white;
+    transform: rotate(-3deg);
+  }
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+  }
+  .nav-links a {
+    color: var(--black);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 8px 16px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    transition: all 0.15s;
+  }
+  .nav-links a:hover {
+    border-color: var(--black);
+    background: white;
+    box-shadow: 3px 3px 0 var(--black);
+    transform: translateY(-2px) rotate(-1deg);
+  }
+  .btn-brutal {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--blue);
+    color: white;
+    border: var(--border);
+    padding: 10px 24px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    text-decoration: none;
+    box-shadow: var(--shadow);
+    transition: all 0.15s;
+    font-family: 'Noto Sans SC', sans-serif;
+  }
+  .btn-brutal:hover {
+    transform: translateY(-3px) rotate(-1deg);
+    box-shadow: var(--shadow-lg);
+  }
+  .btn-brutal:active {
+    transform: translateY(1px);
+    box-shadow: 2px 2px 0 var(--black);
+  }
+  .btn-brutal.pink { background: var(--pink); }
+  .btn-brutal.green { background: var(--green); color: var(--black); }
+  .btn-brutal.orange { background: var(--orange); }
+  .btn-brutal.black { background: var(--black); color: var(--yellow); }
+  .btn-brutal.lg { padding: 16px 36px; font-size: 18px; border-radius: 16px; }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 80px 0 60px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+  }
+  .hero-text { position: relative; z-index: 2; }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--green);
+    border: var(--border);
+    border-radius: 100px;
+    padding: 6px 18px 6px 8px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-sm);
+    transform: rotate(-2deg);
+  }
+  .hero-badge-dot {
+    width: 22px; height: 22px;
+    background: var(--yellow);
+    border: 2px solid var(--black);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+  }
+  .hero h1 {
+    font-size: clamp(3.5rem, 7vw, 6rem);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    margin-bottom: 24px;
+  }
+  .hero h1 .line2 {
+    color: var(--blue);
+    -webkit-text-stroke: 2px var(--black);
+  }
+  .hero-desc {
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--black);
+    max-width: 480px;
+    margin-bottom: 36px;
+    font-weight: 400;
+  }
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .hero-sticker {
+    position: absolute;
+    top: -10px;
+    right: 40px;
+    background: var(--pink);
+    border: var(--border);
+    border-radius: 50%;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 900;
+    text-align: center;
+    line-height: 1.2;
+    box-shadow: var(--shadow);
+    transform: rotate(15deg);
+    z-index: 3;
+  }
+  .hero-visual {
+    position: relative;
+  }
+  .hero-card {
+    background: white;
+    border: var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    transform: rotate(2deg);
+    position: relative;
+  }
+  .hero-card-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    border-bottom: var(--border);
+    background: var(--yellow);
+  }
+  .hero-card-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--black);
+  }
+  .hero-card-dot.r { background: var(--pink); }
+  .hero-card-dot.y { background: var(--yellow); }
+  .hero-card-dot.g { background: var(--green); }
+  .hero-card-body {
+    display: grid;
+    grid-template-columns: 1fr 40px 1fr;
+    padding: 20px;
+    min-height: 300px;
+    background: #F8F8F0;
+  }
+  .hc-page { display: flex; flex-direction: column; gap: 12px; }
+  .hc-mock-row { display: flex; gap: 10px; align-items: center; }
+  .hc-mock-logo { width: 36px; height: 36px; background: var(--blue); border: 2px solid var(--black); border-radius: 8px; }
+  .hc-mock-lines { display: flex; flex-direction: column; gap: 4px; }
+  .hc-mock-line { height: 6px; border-radius: 3px; border: 1.5px solid var(--black); }
+  .hc-mock-line.w1 { width: 80px; background: var(--pink); opacity: 0.3; }
+  .hc-mock-line.w2 { width: 140px; background: var(--blue); opacity: 0.3; }
+  .hc-mock-cards { display: flex; gap: 8px; }
+  .hc-mock-card {
+    flex: 1; height: 100px;
+    border: 2px solid var(--black);
+    border-radius: 10px;
+    padding: 8px;
+    display: flex; flex-direction: column; justify-content: flex-end;
+  }
+  .hc-mock-card.c1 { background: var(--yellow); }
+  .hc-mock-card.c2 { background: var(--green); }
+  .hc-mock-card.c3 { background: var(--pink); }
+  .hc-arrow { display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 900; }
+  .hc-figma { display: flex; flex-direction: column; gap: 4px; }
+  .hc-figma-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #888;
+    margin-bottom: 4px;
+  }
+  .hc-layer {
+    display: flex; align-items: center; gap: 6px;
+    padding: 4px 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    border-radius: 4px;
+  }
+  .hc-layer:hover { background: rgba(0,0,0,0.04); }
+  .hc-layer.group { font-weight: 700; color: var(--blue); }
+  .hc-layer svg { width: 12px; height: 12px; }
+
+  .hero-float-card {
+    position: absolute;
+    background: white;
+    border: var(--border);
+    border-radius: 14px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+    z-index: 5;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .hero-float-card.fc1 {
+    bottom: -20px; left: -30px;
+    background: var(--green);
+    transform: rotate(-5deg);
+  }
+  .hero-float-card.fc2 {
+    top: -15px; right: -20px;
+    background: var(--pink);
+    color: white;
+    transform: rotate(4deg);
+  }
+
+  /* ── Divider ── */
+  .divider {
+    height: 40px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--black),
+      var(--black) 4px,
+      var(--yellow) 4px,
+      var(--yellow) 8px
+    );
+  }
+
+  /* ── Features ── */
+  .features {
+    padding: 80px 0;
+  }
+  .section-header {
+    margin-bottom: 48px;
+  }
+  .section-tag {
+    display: inline-block;
+    background: var(--pink);
+    border: var(--border);
+    border-radius: 100px;
+    padding: 4px 14px;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .section-title {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  .feature-card {
+    background: white;
+    border: var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: var(--shadow);
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .feature-card:hover {
+    transform: translateY(-5px) rotate(-1deg);
+    box-shadow: var(--shadow-lg);
+  }
+  .feature-card:active {
+    transform: translateY(0);
+    box-shadow: 2px 2px 0 var(--black);
+  }
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    border-radius: 20px 20px 0 0;
+  }
+  .feature-card:nth-child(1)::before { background: var(--blue); }
+  .feature-card:nth-child(2)::before { background: var(--pink); }
+  .feature-card:nth-child(3)::before { background: var(--green); }
+  .feature-card:nth-child(4)::before { background: var(--yellow); }
+  .feature-card:nth-child(5)::before { background: var(--orange); }
+  .feature-card:nth-child(6)::before { background: var(--purple); }
+  .feature-index {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #999;
+    margin-bottom: 12px;
+  }
+  .feature-icon {
+    width: 52px;
+    height: 52px;
+    border: var(--border);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+    font-size: 24px;
+  }
+  .feature-card:nth-child(1) .feature-icon { background: var(--blue); color: white; }
+  .feature-card:nth-child(2) .feature-icon { background: var(--pink); color: white; }
+  .feature-card:nth-child(3) .feature-icon { background: var(--green); }
+  .feature-card:nth-child(4) .feature-icon { background: var(--yellow); }
+  .feature-card:nth-child(5) .feature-icon { background: var(--orange); color: white; }
+  .feature-card:nth-child(6) .feature-icon { background: var(--purple); color: white; }
+  .feature-card h3 {
+    font-size: 20px;
+    font-weight: 900;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+  .feature-card p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #555;
+  }
+
+  /* ── Steps ── */
+  .steps {
+    padding: 80px 0;
+    background: var(--blue);
+    border-top: var(--border);
+    border-bottom: var(--border);
+    position: relative;
+  }
+  .steps .section-tag { background: var(--yellow); }
+  .steps .section-title { color: white; -webkit-text-stroke: 1px var(--black); }
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  .step-card {
+    background: white;
+    border: var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: var(--shadow);
+    transition: all 0.15s;
+    position: relative;
+  }
+  .step-card:hover {
+    transform: translateY(-5px) rotate(1deg);
+    box-shadow: var(--shadow-lg);
+  }
+  .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 48px;
+    font-weight: 900;
+    color: var(--blue);
+    opacity: 0.15;
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+  .step-card h3 {
+    font-size: 18px;
+    font-weight: 900;
+    margin-bottom: 6px;
+  }
+  .step-card p {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #555;
+  }
+  .step-connector {
+    position: absolute;
+    right: -14px;
+    top: 50%;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--yellow);
+    z-index: 2;
+  }
+
+  /* ── Highlights ── */
+  .highlights {
+    padding: 80px 0;
+  }
+  .highlight-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+    margin-bottom: 40px;
+  }
+  .highlight-row:last-child { margin-bottom: 0; }
+  .highlight-row.reverse { direction: rtl; }
+  .highlight-row.reverse > * { direction: ltr; }
+  .highlight-text .section-tag { margin-bottom: 12px; }
+  .highlight-text h3 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 16px;
+  }
+  .highlight-text p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #555;
+  }
+  .highlight-box {
+    background: white;
+    border: var(--border);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 220px;
+    transition: all 0.15s;
+  }
+  .highlight-box:hover {
+    transform: translateY(-4px) rotate(-1deg);
+    box-shadow: var(--shadow-lg);
+  }
+  .key-combo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 56px;
+    height: 56px;
+    padding: 0 16px;
+    background: var(--yellow);
+    border: var(--border);
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 900;
+    font-family: 'JetBrains Mono', monospace;
+    box-shadow: var(--shadow-sm);
+  }
+  .key-plus { font-size: 24px; font-weight: 900; }
+  .font-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+  }
+  .font-item {
+    background: var(--bg);
+    border: 2px solid var(--black);
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .font-name {
+    font-size: 20px;
+    font-weight: 900;
+    margin-bottom: 4px;
+  }
+  .font-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #888;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── CTA ── */
+  .cta {
+    padding: 100px 0;
+    background: var(--pink);
+    border-top: var(--border);
+    border-bottom: var(--border);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta h2 {
+    font-size: clamp(3rem, 6vw, 5rem);
+    font-weight: 900;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    color: white;
+    -webkit-text-stroke: 2px var(--black);
+    margin-bottom: 20px;
+  }
+  .cta p {
+    font-size: 18px;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 40px;
+    font-weight: 400;
+  }
+  .cta-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .cta-sticker {
+    position: absolute;
+    background: var(--yellow);
+    border: var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    box-shadow: var(--shadow);
+    z-index: 2;
+  }
+  .cta-sticker.s1 {
+    width: 80px; height: 80px;
+    top: 20px; left: 10%;
+    transform: rotate(-15deg);
+    font-size: 14px;
+  }
+  .cta-sticker.s2 {
+    width: 60px; height: 60px;
+    bottom: 30px; right: 12%;
+    background: var(--green);
+    transform: rotate(20deg);
+    font-size: 24px;
+  }
+  .cta-sticker.s3 {
+    width: 50px; height: 50px;
+    top: 40px; right: 8%;
+    background: var(--blue);
+    color: white;
+    transform: rotate(8deg);
+    font-size: 22px;
+  }
+
+  /* ── Footer ── */
+  footer {
+    background: var(--black);
+    color: var(--yellow);
+    padding: 40px 0;
+  }
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-brand {
+    font-size: 16px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+  }
+  .footer-meta {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    display: flex;
+    gap: 24px;
+    font-weight: 400;
+  }
+  .footer-meta a { color: rgba(255,255,255,0.5); text-decoration: none; font-weight: 700; transition: color 0.15s; }
+  .footer-meta a:hover { color: var(--yellow); }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="container">
+    <div class="nav-brand">
+      <div class="nav-brand-icon">F</div>
+      网页转 Figma
+    </div>
+    <ul class="nav-links">
+      <li><a href="#features">功能</a></li>
+      <li><a href="#steps">使用方式</a></li>
+      <li><a href="#highlight">亮点</a></li>
+    </ul>
+    <a href="https://github.com/suzuka61/web-to-figma/releases/download/V1.0/web-to-figma.zip" class="btn-brutal pink">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+      下载安装
+    </a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <div class="hero-sticker">免费<br>开源</div>
+        <div class="hero-badge">
+          <div class="hero-badge-dot">★</div>
+          Chrome 扩展 · 完全免费
+        </div>
+        <h1>一键抓取<br><span class="line2">网页转 Figma</span></h1>
+        <p class="hero-desc">将网页 DOM 直接转为 Figma 可编辑节点，保留文字、样式、布局。不是截图，是真正的图层。</p>
+        <div class="hero-actions">
+          <a href="https://github.com/suzuka61/web-to-figma/releases/download/V1.0/web-to-figma.zip" class="btn-brutal lg">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            下载扩展
+          </a>
+          <a href="https://github.com/suzuka61/web-to-figma" class="btn-brutal black lg">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+            GitHub
+          </a>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="hero-card">
+          <div class="hero-card-bar">
+            <div class="hero-card-dot r"></div>
+            <div class="hero-card-dot y"></div>
+            <div class="hero-card-dot g"></div>
+          </div>
+          <div class="hero-card-body">
+            <div class="hc-page">
+              <div class="hc-mock-row">
+                <div class="hc-mock-logo"></div>
+                <div class="hc-mock-lines">
+                  <div class="hc-mock-line w1"></div>
+                  <div class="hc-mock-line w2"></div>
+                </div>
+              </div>
+              <div class="hc-mock-cards">
+                <div class="hc-mock-card c1"></div>
+                <div class="hc-mock-card c2"></div>
+                <div class="hc-mock-card c3"></div>
+              </div>
+            </div>
+            <div class="hc-arrow">→</div>
+            <div class="hc-figma">
+              <div class="hc-figma-label">Figma 图层</div>
+              <div class="hc-layer group">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3l2-2h4l2 2h6v10H1z"/></svg>
+                Frame: page
+              </div>
+              <div class="hc-layer" style="padding-left:22px;">
+                <svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12"/></svg>
+                Header
+              </div>
+              <div class="hc-layer" style="padding-left:38px;">
+                <svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="5"/></svg>
+                Logo
+              </div>
+              <div class="hc-layer group" style="padding-left:22px;">
+                <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 3l2-2h4l2 2h6v10H1z"/></svg>
+                Cards
+              </div>
+              <div class="hc-layer" style="padding-left:38px;">
+                <svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12"/></svg>
+                Card 1
+              </div>
+              <div class="hc-layer" style="padding-left:38px;">
+                <svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12"/></svg>
+                Card 2
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-float-card fc1">✦ Ctrl+V 粘贴</div>
+        <div class="hero-float-card fc2">⚡ 可编辑图层</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">核心功能</div>
+      <h2 class="section-title">为设计工作流<br>量身打造</h2>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-index">01</div>
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <h3>全页采集</h3>
+        <p>自动滚动加载所有图片和字体，一键采集完整页面内容，无需手动操作。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-index">02</div>
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="M13 13l6 6"/></svg>
+        </div>
+        <h3>选取元素</h3>
+        <p>鼠标悬停高亮，精准点击选取指定组件，只抓取你需要的那部分。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-index">03</div>
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>零 CORS 配置</h3>
+        <p>自动注入 CORS 头并移除 CSP 限制，无需安装额外的跨域插件。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-index">04</div>
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+        </div>
+        <h3>中日韩字体修复</h3>
+        <p>自动将中文、日文、韩文文本映射到正确字体，告别乱码和方块字。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-index">05</div>
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 3l5 5-14 14H3v-4L16 3z"/></svg>
+        </div>
+        <h3>DOM 扁平化</h3>
+        <p>剔除冗余包裹 div，生成干净的 Figma 图层树，结构一目了然。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-index">06</div>
+        <div class="feature-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><circle cx="6" cy="6" r="1.5" fill="currentColor"/><circle cx="6" cy="18" r="1.5" fill="currentColor"/></svg>
+        </div>
+        <h3>Shadow DOM 支持</h3>
+        <p>拦截 attachShadow，暴露闭合 Shadow DOM，完整采集组件内部结构。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Steps -->
+<section class="steps" id="steps">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">使用方式</div>
+      <h2 class="section-title">四步上手<br>零学习成本</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <h3>安装扩展</h3>
+        <p>在 Chrome 中加载已解压扩展程序，选择下载的文件夹</p>
+        <span class="step-connector">→</span>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <h3>打开 Figma</h3>
+        <p>确保 Figma 桌面应用已运行，扩展依赖其采集能力</p>
+        <span class="step-connector">→</span>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <h3>点击采集</h3>
+        <p>按 Alt+Shift+F 或点击图标，选择全页或选取元素</p>
+        <span class="step-connector">→</span>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <h3>粘贴使用</h3>
+        <p>在 Figma 中 Ctrl+V 粘贴，得到可编辑图层</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Highlights -->
+<section class="highlights" id="highlight">
+  <div class="container">
+    <div class="highlight-row">
+      <div class="highlight-text">
+        <div class="section-tag">快捷键</div>
+        <h3>一键触发<br>效率拉满</h3>
+        <p>按 Alt+Shift+F 即可激活采集，无需移动鼠标。快捷键可在 Chrome 扩展设置中自定义，适应你的工作习惯。</p>
+      </div>
+      <div class="highlight-box">
+        <div class="key-combo">
+          <span class="key">Alt</span>
+          <span class="key-plus">+</span>
+          <span class="key">Shift</span>
+          <span class="key-plus">+</span>
+          <span class="key">F</span>
+        </div>
+      </div>
+    </div>
+    <div class="highlight-row reverse">
+      <div class="highlight-text">
+        <div class="section-tag" style="background:var(--orange);">字体映射</div>
+        <h3>中文内容<br>不再乱码</h3>
+        <p>扩展自动识别中日韩文字节点，将字体映射为系统可用的中文字体，确保粘贴到 Figma 后文字样式正确显示。</p>
+      </div>
+      <div class="highlight-box">
+        <div class="font-grid">
+          <div class="font-item">
+            <div class="font-name" style="color:var(--pink);">苹方</div>
+            <div class="font-label">PingFang SC</div>
+          </div>
+          <div class="font-item">
+            <div class="font-name" style="color:var(--blue);">思源黑体</div>
+            <div class="font-label">Noto Sans SC</div>
+          </div>
+          <div class="font-item">
+            <div class="font-name" style="color:var(--green);">思源宋体</div>
+            <div class="font-label">Noto Serif SC</div>
+          </div>
+          <div class="font-item">
+            <div class="font-name" style="color:var(--orange);">系统默认</div>
+            <div class="font-label">其它语言回退</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="cta-sticker s1">MIT</div>
+  <div class="cta-sticker s2">★</div>
+  <div class="cta-sticker s3">✦</div>
+  <div class="container">
+    <h2>现在就试试</h2>
+    <p>免费、开源。让网页设计稿采集变得前所未有的简单。</p>
+    <div class="cta-buttons">
+      <a href="https://github.com/suzuka61/web-to-figma/releases/download/V1.0/web-to-figma.zip" class="btn-brutal lg green">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        下载扩展
+      </a>
+      <a href="https://github.com/suzuka61/web-to-figma" class="btn-brutal lg">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+        查看源码
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">网页转 Figma</div>
+      <div class="footer-meta">
+        <span>MIT 许可证</span>
+        <a href="https://github.com/suzuka61/web-to-figma">GitHub</a>
+        <span>Chrome 116+ · Manifest V3</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
